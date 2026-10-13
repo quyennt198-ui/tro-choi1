@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đấu Trường Nhóm: Giao Tiếp Trực Tuyến & Chữa Bài</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .card-item {
+            cursor: grab;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-item:active {
+            cursor: grabbing;
+        }
+        .drop-zone {
+            min-height: 220px;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over {
+            transform: scale(1.02);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 min-h-screen text-slate-800 flex flex-col">
+
+    <header class="bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md">
+                    <i class="fa-solid fa-users-rectangle text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                        Đấu Trường Nhóm: Giao Tiếp Trực Tuyến
+                    </h1>
+                    <p class="text-xs text-slate-500" id="header-subtitle">Hệ thống tương tác lớp học đám mây (Cloud Sync)</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2" id="header-nav-actions">
+                <!-- Dynamically populated header actions -->
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+
+        <!-- VIEW 0: WELCOME / ROLE SELECTION -->
+        <div id="view-welcome" class="max-w-3xl mx-auto w-full my-auto py-8">
+            <div class="text-center mb-8">
+                <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Bài học: Giao tiếp trực tuyến</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-800 mt-3 mb-2">Chọn Vai Trò Tham Gia</h2>
+                <p class="text-base text-slate-500 max-w-xl mx-auto">Vui lòng chọn giao diện phù hợp với thiết bị của bạn.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Option 1: Student -->
+                <div onclick="selectRole('student')" class="bg-white hover:bg-indigo-50/40 border-2 border-slate-200 hover:border-indigo-500 rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-xl transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition shadow-inner">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">Học Sinh Tham Gia</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed">Dành cho học sinh dùng điện thoại hoặc máy tính cá nhân để tham gia làm bài, kéo thả thẻ tình huống và đóng góp điểm số.</p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-indigo-600 font-bold text-sm">
+                        <span>Vào phòng làm bài</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+
+                <!-- Option 2: Teacher with Password Prompt -->
+                <div onclick="promptTeacherLogin()" class="bg-white hover:bg-amber-50/40 border-2 border-slate-200 hover:border-amber-500 rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-xl transition cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <div class="w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition shadow-inner">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">Giáo Viên / Máy Chiếu</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed">Dành cho giáo viên. Yêu cầu nhập mật khẩu bảo mật (Quyen) để mở bảng điểm real-time 4 nhóm và nội dung chữa bài.</p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-amber-700 font-bold text-sm">
+                        <span>Mở bảng quản trò (Yêu cầu mật khẩu)</span>
+                        <i class="fa-solid fa-lock group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 1: STUDENT JOIN FORM -->
+        <div id="view-student-join" class="hidden max-w-md mx-auto w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-100 my-auto">
+            <div class="text-center mb-6">
+                <button onclick="switchRole('welcome')" class="float-left text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-arrow-left mr-1"></i> Quay lại</button>
+                <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-slate-800">Đăng Nhập Học Sinh</h2>
+                <p class="text-xs text-slate-500 mt-1">Nhập tên và chọn nhóm thi đấu trực tuyến của bạn.</p>
+            </div>
+
+            <form onsubmit="handleStudentJoin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Họ và tên của bạn</label>
+                    <input type="text" id="student-name-input" required placeholder="Ví dụ: Nguyễn Văn A" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Chọn Nhóm Thi Đấu</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:border-blue-500 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50/50">
+                            <input type="radio" name="team-choice" value="1" checked class="text-blue-600">
+                            <div>
+                                <span class="block text-sm font-bold text-blue-700">Nhóm 1</span>
+                                <span class="block text-[10px] text-slate-400" id="team-1-count">0 thành viên</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:border-emerald-500 transition has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-50/50">
+                            <input type="radio" name="team-choice" value="2" class="text-emerald-600">
+                            <div>
+                                <span class="block text-sm font-bold text-emerald-700">Nhóm 2</span>
+                                <span class="block text-[10px] text-slate-400" id="team-2-count">0 thành viên</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:border-amber-500 transition has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/50">
+                            <input type="radio" name="team-choice" value="3" class="text-amber-600">
+                            <div>
+                                <span class="block text-sm font-bold text-amber-700">Nhóm 3</span>
+                                <span class="block text-[10px] text-slate-400" id="team-3-count">0 thành viên</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:border-purple-500 transition has-[:checked]:border-purple-600 has-[:checked]:bg-purple-50/50">
+                            <input type="radio" name="team-choice" value="4" class="text-purple-600">
+                            <div>
+                                <span class="block text-sm font-bold text-purple-700">Nhóm 4</span>
+                                <span class="block text-[10px] text-slate-400" id="team-4-count">0 thành viên</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
+                    <span>Vào Làm Bài Ngay</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- VIEW 2: STUDENT GAME VIEW -->
+        <div id="view-student-game" class="hidden flex flex-col gap-6">
+            <!-- Top bar with student status & score summary -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <span id="student-badge" class="px-3 py-1 rounded-xl text-white font-bold text-xs bg-indigo-600">Nhóm 1</span>
+                    <span class="text-sm font-bold text-slate-700" id="student-name-display">Học sinh</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-center bg-slate-100 px-3 py-1.5 rounded-xl">
+                        <span class="text-[10px] text-slate-500 block font-semibold">ĐIỂM TẠM TÍNH</span>
+                        <span id="student-live-score" class="text-sm font-extrabold text-emerald-600">0/11</span>
+                    </div>
+                    <div class="text-center bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-200">
+                        <span class="text-[10px] text-indigo-600 block font-bold">THỜI GIAN CÒN LẠI</span>
+                        <span id="game-countdown" class="text-sm font-extrabold text-indigo-700">03:00</span>
+                    </div>
+                    <button id="btn-submit-work" onclick="submitStudentWork()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md transition">
+                        <i class="fa-solid fa-paper-plane mr-1"></i> Nộp Bài Ngay
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pool of cards -->
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xs sm:text-sm font-semibold text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-indigo-500"></i> Kho thẻ tình huống thực tế (Kéo thả hoặc chạm để chọn):
+                    </h2>
+                    <span id="remaining-count" class="text-xs bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full">Còn 11 thẻ</span>
+                </div>
+                <div id="card-pool" class="flex flex-wrap gap-2.5 min-h-[90px] p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300 items-center justify-center">
+                    <!-- Cards here -->
+                </div>
+            </div>
+
+            <!-- Three Drop Zones -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div id="zone-advantage" class="drop-zone bg-emerald-50/70 border-2 border-dashed border-emerald-300 rounded-2xl p-4 flex flex-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event, 'advantage')">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-emerald-200">
+                        <div class="flex items-center space-x-2 text-emerald-800 font-bold text-base">
+                            <div class="bg-emerald-600 text-white w-7 h-7 rounded-lg flex items-center justify-center shadow-md">
+                                <i class="fa-solid fa-thumbs-up text-xs"></i>
+                            </div>
+                            <span>Ưu điểm</span>
+                        </div>
+                        <span class="zone-counter bg-emerald-200/80 text-emerald-900 text-xs font-bold px-2 py-0.5 rounded-full">0/4</span>
+                    </div>
+                    <div class="drop-content flex-1 flex flex-col gap-2.5 min-h-[150px]"></div>
+                </div>
+
+                <div id="zone-disadvantage" class="drop-zone bg-amber-50/70 border-2 border-dashed border-amber-300 rounded-2xl p-4 flex flex-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event, 'disadvantage')">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-200">
+                        <div class="flex items-center space-x-2 text-amber-900 font-bold text-base">
+                            <div class="bg-amber-600 text-white w-7 h-7 rounded-lg flex items-center justify-center shadow-md">
+                                <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                            </div>
+                            <span>Nhược điểm</span>
+                        </div>
+                        <span class="zone-counter bg-amber-200/80 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">0/4</span>
+                    </div>
+                    <div class="drop-content flex-1 flex flex-col gap-2.5 min-h-[150px]"></div>
+                </div>
+
+                <div id="zone-distractor" class="drop-zone bg-rose-50/70 border-2 border-dashed border-rose-300 rounded-2xl p-4 flex flex-col shadow-sm" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event, 'distractor')">
+                    <div class="flex items-center justify-between mb-3 pb-2 border-b border-rose-200">
+                        <div class="flex items-center space-x-2 text-rose-900 font-bold text-base">
+                            <div class="bg-rose-600 text-white w-7 h-7 rounded-lg flex items-center justify-center shadow-md">
+                                <i class="fa-solid fa-ban text-xs"></i>
+                            </div>
+                            <span>Đáp án nhiễu</span>
+                        </div>
+                        <span class="zone-counter bg-rose-200/80 text-rose-900 text-xs font-bold px-2 py-0.5 rounded-full">0/3</span>
+                    </div>
+                    <div class="drop-content flex-1 flex flex-col gap-2.5 min-h-[150px]"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 3: TEACHER DASHBOARD & REVIEW MODE -->
+        <div id="view-teacher-dashboard" class="hidden flex flex-col gap-6">
+            <!-- Top Controls for Teacher -->
+            <div class="bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-3xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <span class="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full"><i class="fa-solid fa-shield-halved mr-1"></i> Đã xác thực mật khẩu Giáo viên</span>
+                    <h2 class="text-2xl font-extrabold mt-2">Bảng Điểm Trực Tiếp 4 Nhóm & Chữa Bài</h2>
+                    <p class="text-xs text-amber-100 mt-1">Theo dõi kết quả real-time qua đám mây và chuyển sang chế độ chữa bài chi tiết cho cả lớp.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="switchTeacherTab('scores')" id="btn-tab-scores" class="bg-white text-amber-800 font-bold px-4 py-2.5 rounded-xl shadow text-sm transition">
+                        <i class="fa-solid fa-trophy mr-1"></i> Điểm Nhóm & Xếp Hạng
+                    </button>
+                    <button onclick="switchTeacherTab('review')" id="btn-tab-review" class="bg-amber-800/60 hover:bg-amber-800 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition border border-amber-500/40">
+                        <i class="fa-solid fa-chalkboard mr-1"></i> 👨‍🏫 Chữa Bài Cùng Lớp
+                    </button>
+                    <button onclick="promptResetCloudData()" class="bg-rose-900/60 hover:bg-rose-900 text-white p-2.5 rounded-xl text-sm transition" title="Làm mới dữ liệu đám mây">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 1: LIVE TEAM SCORES & RANKINGS -->
+            <div id="teacher-tab-scores" class="flex flex-col gap-6">
+                <div id="teacher-teams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <div class="bg-white rounded-3xl p-6 shadow-md border border-slate-100">
+                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-users text-indigo-500"></i> Danh sách học sinh đã tham gia & nộp bài (Real-time Cloud)
+                    </h3>
+                    <div id="teacher-players-list" class="divide-y divide-slate-100 max-h-72 overflow-y-auto text-sm">
+                        <!-- Student submissions -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: TEACHER CORRECTION & PEDAGOGICAL REVIEW MODE -->
+            <div id="teacher-tab-review" class="hidden flex flex-col gap-6">
+                <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-md border border-slate-100">
+                    <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-book-open-reader text-indigo-600"></i> Hướng Dẫn Chữa Bài & Phân Tích Kiến Thức (Tình Huống Thực Tế)
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-1">Giáo viên sử dụng nội dung này để giảng giải cho học sinh hiểu rõ bản chất từng ý trong bài học.</p>
+                        </div>
+                        <div class="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1.5 rounded-xl">
+                            Chế độ Máy Chiếu
+                        </div>
+                    </div>
+
+                    <!-- Review Cards Container with Practical Activities -->
+                    <div class="space-y-6">
+                        <!-- Group 1: Ưu điểm -->
+                        <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-5">
+                            <h4 class="font-bold text-emerald-900 text-base mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-thumbs-up text-emerald-600"></i> Nhóm 1: Ưu Điểm của Giao Tiếp Trực Tuyến (Tình huống thực tế)
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="bg-white p-3.5 rounded-xl border border-emerald-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">1. Ngồi tại nhà thảo luận nhóm qua Zoom/Messenger.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện sự <strong>thuận tiện</strong>, kết nối mọi lúc mọi nơi mà không bị giới hạn bởi khoảng cách địa lý hay thời tiết.</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-emerald-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">2. Không tốn tiền xe, thời gian đi lại để họp ôn thi.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện sự <strong>tiết kiệm thời gian và chi phí</strong> đi lại, thuê phòng họp.</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-emerald-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">3. Dễ dàng kết bạn, học hỏi với bạn bè trường khác qua hội nhóm.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện việc <strong>mở rộng kết nối xã hội</strong> ra ngoài phạm vi lớp học truyền thống.</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-emerald-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">4. Vừa gửi tin nhắn văn bản, vừa gửi hình ảnh, video, sticker.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện <strong>công cụ giao tiếp đa dạng</strong>, phong phú và sinh động.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group 2: Nhược điểm -->
+                        <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-5">
+                            <h4 class="font-bold text-amber-900 text-base mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Nhóm 2: Nhược Điểm của Giao Tiếp Trực Tuyến (Tình huống thực tế)
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="bg-white p-3.5 rounded-xl border border-amber-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">1. Nhắn tin qua lại dễ bị hiểu lầm cảm xúc vì không thấy nét mặt.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện việc <strong>thiếu tín hiệu phi ngôn ngữ</strong> (ánh mắt, ngữ điệu, cử chỉ).</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-amber-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">2. Dễ bị kẻ xấu đánh cắp thông tin cá nhân hoặc lừa đảo mạng.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện nguy cơ về <strong>bảo mật và quyền riêng tư</strong> trên không gian mạng.</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-amber-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">3. Chỉ trò chuyện qua màn hình nên khó có sự gắn bó sâu sắc, thân thiết.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện <strong>khó khăn trong xây dựng mối quan hệ cá nhân chặt chẽ</strong> như gặp trực tiếp.</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-amber-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">4. Đang học nhóm trực tuyến thì mất mạng, giật lag làm gián đoạn.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed">Thể hiện việc <strong>dễ bị ảnh hưởng bởi sự cố kĩ thuật</strong> đường truyền.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Group 3: Đáp án nhiễu -->
+                        <div class="bg-rose-50/70 border border-rose-200 rounded-2xl p-5">
+                            <h4 class="font-bold text-rose-900 text-base mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-ban text-rose-600"></i> Nhóm 3: Các Đáp Án Nhiễu (Cần loại bỏ vì sai bản chất)
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div class="bg-white p-3.5 rounded-xl border border-rose-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">1. Nhìn qua webcam là đọc được chuẩn xác 100% cảm xúc người khác.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed"><strong>Sai vì:</strong> Màn hình bị lag, mờ hoặc chỉ thấy một phần, không thể chính xác tuyệt đối như gặp mặt.</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-rose-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">2. Giao tiếp trực tuyến làm tốn rất nhiều thời gian đi lại giữa nhà nhau.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed"><strong>Sai vì:</strong> Ngược lại, giao tiếp trực tuyến giúp *tiết kiệm* thời gian đi lại chứ không làm tốn kém.</p>
+                                </div>
+                                <div class="bg-white p-3.5 rounded-xl border border-rose-100 shadow-xs">
+                                    <span class="font-bold text-slate-800 text-sm block mb-1">3. Dùng mạng xã hội khiến con người hoàn toàn bị cách ly khỏi xã hội.</span>
+                                    <p class="text-xs text-slate-600 leading-relaxed"><strong>Sai vì:</strong> Giao tiếp trực tuyến là công cụ kết nối con người lại với nhau chứ không phải cách ly hoàn toàn.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Password Prompt Modal -->
+    <div id="password-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center">
+            <div class="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl shadow-inner">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800 mb-1">Xác Thực Giáo Viên</h3>
+            <p class="text-xs text-slate-500 mb-4">Vui lòng nhập mật khẩu để truy cập bảng quản trò.</p>
+            <input type="password" id="teacher-pwd-input" placeholder="Nhập mật khẩu..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-500 text-center font-bold tracking-widest">
+            <div class="flex gap-2">
+                <button onclick="closePasswordModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">Hủy</button>
+                <button onclick="verifyTeacherPassword()" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (Replaces native confirm) -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center">
+            <div class="w-14 h-14 bg-rose-100 text-rose-700 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl shadow-inner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800 mb-1" id="confirm-title">Xác nhận</h3>
+            <p class="text-xs text-slate-500 mb-5" id="confirm-message">Bạn có chắc chắn muốn thực hiện hành động này?</p>
+            <div class="flex gap-2">
+                <button onclick="closeConfirmModal(false)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">Hủy</button>
+                <button id="confirm-btn-yes" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900/90 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-message" class="text-sm font-medium">Thông báo</span>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'giao-tiep-truc-tuyen-nhom-v2';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        let app, db, auth, currentUser = null;
+        let allPlayersData = [];
+
+        // Practical Activity Cards Definition (11 cards)
+        const initialCards = [
+            { id: 'adv-1', text: 'Ngồi tại nhà thảo luận nhóm qua Zoom/Messenger.', category: 'advantage' },
+            { id: 'adv-2', text: 'Không tốn tiền xe, thời gian đi lại để họp ôn thi.', category: 'advantage' },
+            { id: 'adv-3', text: 'Dễ dàng kết bạn, học hỏi với bạn bè trường khác qua hội nhóm.', category: 'advantage' },
+            { id: 'adv-4', text: 'Vừa gửi tin nhắn văn bản, vừa gửi hình ảnh, video, sticker.', category: 'advantage' },
+            { id: 'dis-1', text: 'Nhắn tin qua lại dễ bị hiểu lầm cảm xúc vì không thấy nét mặt.', category: 'disadvantage' },
+            { id: 'dis-2', text: 'Dễ bị kẻ xấu đánh cắp thông tin cá nhân hoặc lừa đảo mạng.', category: 'disadvantage' },
+            { id: 'dis-3', text: 'Chỉ trò chuyện qua màn hình nên khó có sự gắn bó sâu sắc, thân thiết.', category: 'disadvantage' },
+            { id: 'dis-4', text: 'Đang học nhóm trực tuyến thì mất mạng, giật lag làm gián đoạn.', category: 'disadvantage' },
+            { id: 'noise-1', text: 'Nhìn qua webcam là đọc được chuẩn xác 100% cảm xúc người khác.', category: 'distractor' },
+            { id: 'noise-2', text: 'Giao tiếp trực tuyến làm tốn rất nhiều thời gian đi lại giữa nhà nhau.', category: 'distractor' },
+            { id: 'noise-3', text: 'Dùng mạng xã hội khiến con người hoàn toàn bị cách ly khỏi xã hội.', category: 'distractor' }
+        ];
+
+        let currentRole = 'welcome';
+        let myName = '';
+        let myTeam = '1';
+        let myUserId = 'user_' + Math.random().toString(36).substring(2, 9);
+        let cards = [...initialCards];
+        let selectedCardsState = { advantage: [], disadvantage: [], distractor: [] };
+        
+        let gameTimeLeft = 180; // 3 minutes countdown (180 seconds)
+        let gameTimerInterval = null;
+        let isGameSubmitted = false;
+        let activeSelectedCardId = null;
+
+        // Make functions globally accessible for HTML inline event handlers
+        window.switchRole = function(role) {
+            currentRole = role;
+            if (role === 'welcome') {
+                switchView('welcome');
+            } else if (role === 'student') {
+                switchView('student-join');
+            } else if (role === 'teacher') {
+                switchView('teacher-dashboard');
+                renderTeacherDashboard();
+            }
+        };
+
+        window.selectRole = function(role) {
+            window.switchRole(role);
+        };
+
+        window.switchView = function(viewId) {
+            document.getElementById('view-welcome').classList.add('hidden');
+            document.getElementById('view-student-join').classList.add('hidden');
+            document.getElementById('view-student-game').classList.add('hidden');
+            document.getElementById('view-teacher-dashboard').classList.add('hidden');
+
+            if (viewId === 'welcome') document.getElementById('view-welcome').classList.remove('hidden');
+            if (viewId === 'student-join') document.getElementById('view-student-join').classList.remove('hidden');
+            if (viewId === 'student-game') document.getElementById('view-student-game').classList.remove('hidden');
+            if (viewId === 'teacher-dashboard') document.getElementById('view-teacher-dashboard').classList.remove('hidden');
+
+            renderHeaderNav();
+        };
+
+        window.onload = async () => {
+            await initFirebaseCloud();
+            window.switchRole('welcome');
+        };
+
+        async function initFirebaseCloud() {
+            try {
+                if (Object.keys(firebaseConfig).length > 0) {
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    currentUser = auth.currentUser;
+                    if (currentUser) {
+                        myUserId = currentUser.uid;
+                    }
+
+                    const playersColRef = collection(db, 'artifacts', appId, 'public', 'data', 'players');
+                    
+                    onSnapshot(playersColRef, (snapshot) => {
+                        allPlayersData = [];
+                        snapshot.forEach(docSnap => {
+                            allPlayersData.push(docSnap.data());
+                        });
+                        processPlayersUpdate();
+                    }, (err) => {
+                        console.error("Cloud snapshot error:", err);
+                        showToast('Lỗi đồng bộ đám mây!', 'error');
+                    });
+                } else {
+                    showToast('Chưa cấu hình Firebase Cloud. Vui lòng kiểm tra môi trường.', 'error');
+                }
+            } catch (e) {
+                console.error("Firebase init failed:", e);
+            }
+        }
+
+        function processPlayersUpdate() {
+            let counts = { '1': 0, '2': 0, '3': 0, '4': 0 };
+            allPlayersData.forEach(p => {
+                if (counts[p.teamId] !== undefined) counts[p.teamId]++;
+            });
+            for (let t = 1; t <= 4; t++) {
+                const el = document.getElementById(`team-${t}-count`);
+                if (el) el.innerText = `${counts[t]} thành viên`;
+            }
+
+            if (currentRole === 'teacher') {
+                renderTeacherDashboard();
+            }
+        }
+
+        // Teacher Authentication Modal
+        window.promptTeacherLogin = function() {
+            document.getElementById('teacher-pwd-input').value = '';
+            document.getElementById('password-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('teacher-pwd-input').focus(), 100);
+        };
+
+        window.closePasswordModal = function() {
+            document.getElementById('password-modal').classList.add('hidden');
+        };
+
+        window.verifyTeacherPassword = function() {
+            const pwd = document.getElementById('teacher-pwd-input').value;
+            if (pwd === 'Quyen') {
+                closePasswordModal();
+                window.selectRole('teacher');
+                showToast('Đăng nhập thành công tài khoản Giáo viên!', 'success');
+            } else {
+                showToast('Mật khẩu không chính xác! Vui lòng thử lại.', 'error');
+                document.getElementById('teacher-pwd-input').value = '';
+                document.getElementById('teacher-pwd-input').focus();
+            }
+        };
+
+        function renderHeaderNav() {
+            const navEl = document.getElementById('header-nav-actions');
+            navEl.innerHTML = '';
+
+            if (currentRole === 'student') {
+                navEl.innerHTML = `
+                    <button onclick="switchRole('welcome')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition">
+                        <i class="fa-solid fa-house mr-1"></i> Đổi vai trò
+                    </button>
+                `;
+            } else if (currentRole === 'teacher') {
+                navEl.innerHTML = `
+                    <span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-xl text-xs font-bold">
+                        <i class="fa-solid fa-shield-halved mr-1"></i> Quản Trò (Đã xác thực)
+                    </span>
+                    <button onclick="switchRole('welcome')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition">
+                        <i class="fa-solid fa-house mr-1"></i> Trang chủ
+                    </button>
+                `;
+            } else {
+                navEl.innerHTML = `
+                    <button onclick="promptTeacherLogin()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow transition">
+                        <i class="fa-solid fa-chalkboard-user mr-1"></i> Mở Bảng Quản Trò
+                    </button>
+                `;
+            }
+        }
+
+        // Student Join
+        window.handleStudentJoin = function(event) {
+            event.preventDefault();
+            myName = document.getElementById('student-name-input').value.trim();
+            const radio = document.querySelector('input[name="team-choice"]:checked');
+            myTeam = radio ? radio.value : '1';
+
+            if (!myName) return;
+
+            document.getElementById('student-name-display').innerText = myName;
+            const badge = document.getElementById('student-badge');
+            badge.innerText = `Nhóm ${myTeam}`;
+            badge.className = `px-3 py-1 rounded-xl text-white font-bold text-xs ${
+                myTeam === '1' ? 'bg-blue-600' : myTeam === '2' ? 'bg-emerald-600' : myTeam === '3' ? 'bg-amber-600' : 'bg-purple-600'
+            }`;
+
+            window.switchView('student-game');
+            initStudentGame();
+            syncStudentDataToCloud();
+        };
+
+        // Student Game Logic with 3-min countdown & auto-timeout rule
+        function initStudentGame() {
+            cards = [...initialCards].sort(() => Math.random() - 0.5);
+            selectedCardsState = { advantage: [], disadvantage: [], distractor: [] };
+            activeSelectedCardId = null;
+            isGameSubmitted = false;
+            gameTimeLeft = 180; // 3 minutes
+            
+            document.getElementById('btn-submit-work').disabled = false;
+            document.getElementById('btn-submit-work').classList.remove('opacity-50', 'cursor-not-allowed');
+
+            clearInterval(gameTimerInterval);
+            startCountdownTimer();
+            renderStudentCards();
+            updateStudentScore();
+        }
+
+        function startCountdownTimer() {
+            gameTimerInterval = setInterval(() => {
+                if (isGameSubmitted) {
+                    clearInterval(gameTimerInterval);
+                    return;
+                }
+
+                gameTimeLeft--;
+                const mins = String(Math.floor(gameTimeLeft / 60)).padStart(2, '0');
+                const secs = String(gameTimeLeft % 60).padStart(2, '0');
+                document.getElementById('game-countdown').innerText = `${mins}:${secs}`;
+
+                if (gameTimeLeft <= 0) {
+                    clearInterval(gameTimerInterval);
+                    autoSubmitTimeout();
+                }
+            }, 1000);
+        }
+
+        function autoSubmitTimeout() {
+            if (isGameSubmitted) return;
+            isGameSubmitted = true;
+            
+            document.getElementById('btn-submit-work').disabled = true;
+            document.getElementById('btn-submit-work').classList.add('opacity-50', 'cursor-not-allowed');
+
+            syncStudentDataToCloud(true);
+            showToast('Hết thời gian! Hệ thống đã tự động nộp bài. Thẻ chưa xếp được tính là không chính xác.', 'error');
+        }
+
+        window.renderStudentCards = function() {
+            if (isGameSubmitted) return;
+            const poolEl = document.getElementById('card-pool');
+            poolEl.innerHTML = '';
+
+            const unplaced = cards.filter(c => 
+                !selectedCardsState.advantage.some(sc => sc.id === c.id) &&
+                !selectedCardsState.disadvantage.some(sc => sc.id === c.id) &&
+                !selectedCardsState.distractor.some(sc => sc.id === c.id)
+            );
+
+            if (unplaced.length === 0) {
+                poolEl.innerHTML = `<span class="text-xs text-emerald-600 font-semibold py-2"><i class="fa-solid fa-check-circle mr-1"></i> Đã xếp hết thẻ! Nhấn "Nộp Bài Ngay" phía trên.</span>`;
+            } else {
+                unplaced.forEach(card => {
+                    const div = document.createElement('div');
+                    div.className = `card-item bg-white border border-slate-200 shadow-xs px-3 py-2.5 rounded-xl text-xs font-medium text-slate-700 flex items-center justify-between gap-2 hover:border-indigo-400 transition select-none ${activeSelectedCardId === card.id ? 'ring-2 ring-indigo-500 bg-indigo-50/50' : ''}`;
+                    div.draggable = true;
+                    div.innerHTML = `<div class="flex items-center gap-2"><i class="fa-solid fa-grip-vertical text-slate-300 text-[10px]"></i><span>${card.text}</span></div>`;
+
+                    div.addEventListener('dragstart', (e) => {
+                        if (isGameSubmitted) return;
+                        e.dataTransfer.setData('text/plain', card.id);
+                    });
+
+                    div.addEventListener('click', (e) => {
+                        if (isGameSubmitted) return;
+                        e.stopPropagation();
+                        activeSelectedCardId = (activeSelectedCardId === card.id) ? null : card.id;
+                        window.renderStudentCards();
+                    });
+
+                    poolEl.appendChild(div);
+                });
+            }
+
+            renderStudentZone('advantage', 'zone-advantage');
+            renderStudentZone('disadvantage', 'zone-disadvantage');
+            renderStudentZone('distractor', 'zone-distractor');
+            document.getElementById('remaining-count').innerText = `Còn ${unplaced.length} thẻ`;
+        }
+
+        function renderStudentZone(categoryKey, zoneId) {
+            const zoneEl = document.getElementById(zoneId);
+            const contentEl = zoneEl.querySelector('.drop-content');
+            contentEl.innerHTML = '';
+
+            const items = selectedCardsState[categoryKey];
+            const counterEl = zoneEl.querySelector('.zone-counter');
+            const target = categoryKey === 'distractor' ? 3 : 4;
+            counterEl.innerText = `${items.length}/${target}`;
+
+            if (items.length === 0) {
+                contentEl.innerHTML = `<div class="h-full flex items-center justify-center text-slate-400/60 text-xs italic py-4 border border-dashed border-slate-200 rounded-xl">Kéo thả hoặc chạm chọn vào đây</div>`;
+            } else {
+                items.forEach(card => {
+                    const isCorrect = card.category === categoryKey;
+                    const el = document.createElement('div');
+                    el.className = `bg-white border ${isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-rose-300 bg-rose-50/30'} p-2.5 rounded-xl shadow-xs flex items-center justify-between text-xs font-medium`;
+                    el.innerHTML = `
+                        <div class="flex items-center gap-1.5">
+                            <i class="fa-solid ${isCorrect ? 'fa-circle-check text-emerald-500' : 'fa-circle-xmark text-rose-500'}"></i>
+                            <span class="${isCorrect ? 'text-slate-700' : 'text-rose-700 font-semibold'}">${card.text}</span>
+                        </div>
+                        ${!isGameSubmitted ? `<button onclick="returnStudentCard('${card.id}', '${categoryKey}')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                    `;
+                    contentEl.appendChild(el);
+                });
+            }
+
+            zoneEl.onclick = () => {
+                if (!isGameSubmitted && activeSelectedCardId) {
+                    window.placeCardToStudentZone(activeSelectedCardId, categoryKey);
+                }
+            };
+        }
+
+        window.allowDrop = function(e) {
+            if (isGameSubmitted) return;
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over', 'bg-indigo-50/30');
+        };
+
+        window.dragLeave = function(e) {
+            e.currentTarget.classList.remove('drag-over', 'bg-indigo-50/30');
+        };
+
+        window.dropCard = function(e, targetCategory) {
+            if (isGameSubmitted) return;
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over', 'bg-indigo-50/30');
+            const cardId = e.dataTransfer.getData('text/plain');
+            if (cardId) {
+                window.placeCardToStudentZone(cardId, targetCategory);
+            }
+        };
+
+        window.placeCardToStudentZone = function(cardId, targetCategory) {
+            if (isGameSubmitted) return;
+            const card = cards.find(c => c.id === cardId);
+            if (!card) return;
+
+            Object.keys(selectedCardsState).forEach(cat => {
+                selectedCardsState[cat] = selectedCardsState[cat].filter(c => c.id !== cardId);
+            });
+
+            selectedCardsState[targetCategory].push(card);
+            activeSelectedCardId = null;
+
+            window.renderStudentCards();
+            updateStudentScore();
+            syncStudentDataToCloud();
+        };
+
+        window.returnStudentCard = function(cardId, categoryKey) {
+            if (isGameSubmitted) return;
+            selectedCardsState[categoryKey] = selectedCardsState[categoryKey].filter(c => c.id !== cardId);
+            window.renderStudentCards();
+            updateStudentScore();
+            syncStudentDataToCloud();
+        };
+
+        function calculateCorrectCount() {
+            let correct = 0;
+            Object.keys(selectedCardsState).forEach(cat => {
+                selectedCardsState[cat].forEach(c => {
+                    if (c.category === cat) correct++;
+                });
+            });
+            return correct;
+        }
+
+        function updateStudentScore() {
+            const correct = calculateCorrectCount();
+            document.getElementById('student-live-score').innerText = `${correct}/11`;
+        }
+
+        async function syncStudentDataToCloud(isCompleted = false) {
+            if (!db) return;
+            if (!auth || !auth.currentUser) return;
+
+            const correct = calculateCorrectCount();
+            const completed = isCompleted || isGameSubmitted;
+
+            const playerData = {
+                id: myUserId,
+                name: myName || 'Ẩn danh',
+                teamId: myTeam,
+                score: correct,
+                completed: completed,
+                updatedAt: Date.now()
+            };
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', myUserId);
+                await setDoc(docRef, playerData, { merge: true });
+            } catch (e) {
+                console.error("Sync error:", e);
+            }
+        }
+
+        window.submitStudentWork = function() {
+            if (isGameSubmitted) return;
+            isGameSubmitted = true;
+            clearInterval(gameTimerInterval);
+
+            document.getElementById('btn-submit-work').disabled = true;
+            document.getElementById('btn-submit-work').classList.add('opacity-50', 'cursor-not-allowed');
+
+            syncStudentDataToCloud(true);
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            showToast('Nộp bài thành công lên đám mây!', 'success');
+        };
+
+        // Teacher Dashboard Tabs
+        window.switchTeacherTab = function(tabName) {
+            const btnScores = document.getElementById('btn-tab-scores');
+            const btnReview = document.getElementById('btn-tab-review');
+            const tabScores = document.getElementById('teacher-tab-scores');
+            const tabReview = document.getElementById('teacher-tab-review');
+
+            if (tabName === 'scores') {
+                btnScores.className = 'bg-white text-amber-800 font-bold px-4 py-2.5 rounded-xl shadow text-sm transition';
+                btnReview.className = 'bg-amber-800/60 hover:bg-amber-800 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition border border-amber-500/40';
+                tabScores.classList.remove('hidden');
+                tabReview.classList.add('hidden');
+                renderTeacherDashboard();
+            } else {
+                btnReview.className = 'bg-white text-amber-800 font-bold px-4 py-2.5 rounded-xl shadow text-sm transition';
+                btnScores.className = 'bg-amber-800/60 hover:bg-amber-800 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition border border-amber-500/40';
+                tabReview.classList.remove('hidden');
+                tabScores.classList.add('hidden');
+            }
+        };
+
+        function renderTeacherDashboard() {
+            let teamMap = {
+                '1': { name: 'Nhóm 1', color: 'border-blue-500 bg-blue-50/60 text-blue-900', badge: 'bg-blue-600', players: [] },
+                '2': { name: 'Nhóm 2', color: 'border-emerald-500 bg-emerald-50/60 text-emerald-900', badge: 'bg-emerald-600', players: [] },
+                '3': { name: 'Nhóm 3', color: 'border-amber-500 bg-amber-50/60 text-amber-900', badge: 'bg-amber-600', players: [] },
+                '4': { name: 'Nhóm 4', color: 'border-purple-500 bg-purple-50/60 text-purple-900', badge: 'bg-purple-600', players: [] }
+            };
+
+            allPlayersData.forEach(p => {
+                if (teamMap[p.teamId]) teamMap[p.teamId].players.push(p);
+            });
+
+            let teamScores = [];
+            Object.keys(teamMap).forEach(tId => {
+                let t = teamMap[tId];
+                let total = 0;
+                let count = t.players.length;
+                let completedCount = 0;
+                t.players.forEach(p => {
+                    total += (p.score || 0);
+                    if (p.completed) completedCount++;
+                });
+                let avg = count > 0 ? (total / count) : 0;
+                teamScores.push({ teamId: tId, name: t.name, color: t.color, badge: t.badge, avgScore: avg, count: count, completedCount: completedCount, players: t.players });
+            });
+
+            teamScores.sort((a, b) => b.avgScore - a.avgScore);
+
+            const gridEl = document.getElementById('teacher-teams-grid');
+            if (gridEl) {
+                gridEl.innerHTML = '';
+                teamScores.forEach((team, index) => {
+                    const card = document.createElement('div');
+                    card.className = `border-2 ${team.color} rounded-3xl p-5 flex flex-col justify-between shadow-md`;
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="px-3 py-1 rounded-full ${team.badge} text-white font-bold text-xs shadow">#${index + 1} ${team.name}</span>
+                                <span class="text-xs font-semibold text-slate-600">${team.count} TV (${team.completedCount} đã nộp)</span>
+                            </div>
+                            <div class="bg-white/80 rounded-2xl p-4 text-center my-2 shadow-xs">
+                                <span class="text-xs text-slate-500 block font-medium">ĐIỂM TRUNG BÌNH ĐỘI</span>
+                                <span class="text-3xl font-extrabold text-indigo-600">${team.avgScore.toFixed(2)}</span>
+                                <span class="text-xs text-slate-400">/ 11đ</span>
+                            </div>
+                        </div>
+                    `;
+                    gridEl.appendChild(card);
+                });
+            }
+
+            const listEl = document.getElementById('teacher-players-list');
+            if (listEl) {
+                listEl.innerHTML = '';
+                if (allPlayersData.length === 0) {
+                    listEl.innerHTML = `<div class="text-slate-400 text-center py-6 italic">Chưa có học sinh nào nộp bài.</div>`;
+                } else {
+                    let sorted = [...allPlayersData].sort((a, b) => b.score - a.score);
+                    sorted.forEach(p => {
+                        const row = document.createElement('div');
+                        row.className = 'py-3 px-4 flex justify-between items-center hover:bg-slate-50 rounded-xl';
+                        row.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 text-xs flex items-center justify-center font-bold">N${p.teamId}</span>
+                                <span class="font-semibold text-slate-700">${p.name}</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-xs px-2.5 py-1 rounded-full ${p.completed ? 'bg-emerald-100 text-emerald-700 font-semibold' : 'bg-amber-100 text-amber-700'}">${p.completed ? 'Đã nộp bài' : 'Đang làm'}</span>
+                                <span class="font-extrabold text-indigo-600 text-base">${p.score}/11đ</span>
+                            </div>
+                        `;
+                        listEl.appendChild(row);
+                    });
+                }
+            }
+        }
+
+        // Custom Confirm Modal Helpers
+        window.promptResetCloudData = function() {
+            document.getElementById('confirm-title').innerText = 'Làm mới dữ liệu';
+            document.getElementById('confirm-message').innerText = 'Bạn có chắc chắn muốn làm mới toàn bộ dữ liệu điểm số trên đám mây không?';
+            const yesBtn = document.getElementById('confirm-btn-yes');
+            yesBtn.onclick = async () => {
+                closeConfirmModal(true);
+                await executeResetCloudData();
+            };
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        };
+
+        window.closeConfirmModal = function(isYes) {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        };
+
+        async function executeResetCloudData() {
+            try {
+                for (let p of allPlayersData) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', p.id);
+                    await deleteDoc(docRef);
+                }
+                showToast('Đã làm mới dữ liệu đám mây thành công!', 'success');
+            } catch (e) {
+                console.error("Reset error:", e);
+                showToast('Lỗi khi làm mới dữ liệu!', 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMessage.innerText = message;
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-lg';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
